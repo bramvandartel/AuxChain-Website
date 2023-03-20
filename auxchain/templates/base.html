@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %} {% endblock title %} - AuxChain</title>
+    <title>{% block title %} {% endblock %} - AuxChain</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
@@ -45,6 +45,16 @@
                             <li><a class="dropdown-item" href="#" onclick="startSignIn();">Login using Metamask</a></li>
                         </ul>
                     </li>
+                {% else %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            {{ request.user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url "auxchain:logout" %}">Logout</a></li>
+                        </ul>
+                    </li>
                 {% endif %}
             </ul>
         </div>
@@ -80,27 +90,41 @@
 
     function requestNonce(publicAddress) {
         $.ajax({
-            url: '{% url "auxchain:api:requestnonce" 0 %}'.replace('0', publicAddress),
-            contentType: "application/json",
-            dataType: 'json',
-            success: async function (result) {
-                console.log(result);
-                console.log(result.success);
-                if (result.success) {
-                    console.log("Requesting personal sign with ", result.nonce, " for ", publicAddress);
-                    const signed = await window.ethereum.request({
-                        method: 'personal_sign',
-                        params: [result.nonce, publicAddress]
-                    })
-                    console.log(signed)
-                    // TODO: Process in the backend. e.g. verify signature for message and publicAddress.
-                } else {
-                    if (result.error === "NoSuchUser") {
-                        // TODO: Start Registration
+                url: '{% url "auxchain:api:requestnonce" 0 %}'.replace('0', publicAddress),
+                contentType: "application/json",
+                dataType: 'json',
+                success: async function (result) {
+                    console.log(result);
+                    console.log(result.success);
+                    if (result.success) {
+                        console.log("Requesting personal sign with ", result.nonce, " for ", publicAddress);
+                        const signed = await window.ethereum.request({
+                            method: 'personal_sign',
+                            params: [result.nonce, publicAddress]
+                        })
+                        console.log(signed)
+                        $.ajax({
+                            url: '{% url "auxchain:api:requestnonce" 0 %}'.replace('0', publicAddress),
+                            type: 'POST',
+                            data: {
+                                'signature': signed,
+                            },
+                            success: async function (result) {
+                                if (result.message == "ok") {
+                                    location.reload();
+                                } else {
+                                    // TODO: Handle invalid login.
+                                }
+                            }
+                        });
+                    } else {
+                        if (result.error === "NoSuchUser") {
+                            // TODO: Start Registration
+                        }
                     }
                 }
             }
-        })
+        )
     }
 </script>
 

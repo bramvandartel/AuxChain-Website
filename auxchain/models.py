@@ -11,5 +11,4 @@ class MetamaskUser(AbstractUser):
     def generate_nonce(self):
         alphabet = string.ascii_letters
         self.nonce = ''.join(random.choice(alphabet) for i in range(32))
-        print(self.nonce)
         self.save()
