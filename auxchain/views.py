@@ -1,3 +1,6 @@
+import json
+
+import django.conf
 from django.contrib.auth import login, logout
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
@@ -8,16 +11,49 @@ from eth_account.messages import encode_defunct
 from rest_framework.views import APIView
 from web3 import Web3
 
-from auxchain.models import MetamaskUser
+from auxchain.models import MetamaskUser, Contract
 
 
 # Create your views here.
 class MainView(TemplateView):
     template_name = "home.html"
 
+    def get_context_data(self, **kwargs):
+        context = super(MainView, self).get_context_data(**kwargs)
+        context['auctions'] = Contract.objects.all()
+        return context
+
 
 class CreateView(TemplateView):
     template_name = "create.html"
+
+
+class ContractView(TemplateView):
+    template_name = "view_contract.html"
+
+    def get_context_data(self, address, **kwargs):
+        context = super(ContractView, self).get_context_data(**kwargs)
+        w3 = Web3(Web3.HTTPProvider('https://sepolia.infura.io/v3/9998d159ba924e7aa128fac33d656dee'))
+        abi = json.load(open(django.conf.settings.DEFAULT_CONTRACT_ABI))
+        checksum_address = Web3.toChecksumAddress(address)
+        contract_instance = w3.eth.contract(address=checksum_address, abi=abi)
+        context['instance'] = {
+            'functions': contract_instance.all_functions(),
+            'buyerDeposit': contract_instance.functions.buyerDeposit().call(),
+            'description': contract_instance.functions.description().call(),
+            'endTime': contract_instance.functions.endTime().call(),
+            'getStatus': contract_instance.functions.getStatus().call(),
+            'highestBid': contract_instance.functions.highestBid().call(),
+            'highestBidder': contract_instance.functions.highestBidder().call(),
+            'seller': contract_instance.functions.seller().call(),
+            'sellerDeposit': contract_instance.functions.sellerDeposit().call(),
+            'title': contract_instance.functions.title().call(),
+        }
+        contract = {
+            'address': address,
+        }
+        context['contract'] = contract
+        return context
 
 
 class RequestNonce(APIView):

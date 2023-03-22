@@ -1,27 +1,39 @@
 {% include "base.html" %}
+{% load humanize %}
 
 {% block content %}
     <div class="container">
         <h2>Current auctions</h2>
         {% if auctions %}
-            {% for auction in auctions %}
-                <div class="card" style="width: 18rem;">
-                    <img src="https://www.schoolplaten.com/afbeelding-eend-dm20017.jpg" class="card-img-top" alt="...">
-                    <div class="card-body">
-                        <h5 class="card-title">Auction Title</h5>
-                        <p class="card-text">Here comes some short description of about 150 words of the auction,
-                            the image is loaded and there is a button.
-                        </p>
+            <div class="row">
+                {% for auction in auctions %}
+                    <div class="col">
+                        <div class="card mt-3">
+                            <img src="https://www.schoolplaten.com/afbeelding-eend-dm20017.jpg" class="card-img-top"
+                                 alt="...">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ auction.title }}</h5>
+                                <p class="card-text">{{ auction.description }}
+                                </p>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Current bid:</strong> 50 ETH</li>
+                                <li class="list-group-item"><strong>End time:</strong> {{ auction.end_time|naturaltime }}</li>
+{#                                <li class="list-group-item"><strong>Seller:</strong> {{ auction.seller }}</li>#}
+{#                                <li class="list-group-item"><strong>Seller#}
+{#                                    deposit:</strong> {{ auction.seller_deposit }}#}
+{#                                </li>#}
+{#                                <li class="list-group-item"><strong>Buyer deposit:</strong> {{ auction.buyer_deposit }}#}
+{#                                </li>#}
+                            </ul>
+                            <div class="card-body">
+                                <a href="{% url "auxchain:api:view_contract" auction.contract_address %}"
+                                   class="btn btn-primary">Go to auction</a>
+                            </div>
+                        </div>
                     </div>
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><strong>Current bid:</strong> 50 ETH</li>
-                        <li class="list-group-item"><strong>End time:</strong> 2023-03-18 23:59:00</li>
-                    </ul>
-                    <div class="card-body">
-                        <a href="{% url "auxchain:details" auction.id %}" class="btn btn-primary">Go to auction</a>
-                    </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         {% else %}
             <div class="row">
                 <div class="col-3">

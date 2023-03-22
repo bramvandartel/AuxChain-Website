@@ -1,11 +1,12 @@
 from django.urls import path, include
 
-from auxchain.views import MainView, CreateView, RequestNonce, Logout
+from auxchain.views import MainView, CreateView, RequestNonce, Logout, ContractView
 
 app_name = 'auxchain'
 
 api = ([
            path('nonce/<str:public_address>', RequestNonce.as_view(), name='requestnonce'),
+           path('contract/<str:address>', ContractView.as_view(), name='view_contract'),
        ],
        'api')
 
