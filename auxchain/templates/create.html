@@ -1,3 +1,25 @@
 {% include "base.html" %}
 {% include "contract.html" %}
-<h2>Todo</h2>
+<div class="container-fluid px-5">
+    <form>
+        <div class="mb-3 mx-5">
+            <label for="Images" class="form-label">Images</label>
+            <input type="file" class="form-control" id="InputImages" multiple>
+        </div>
+        <div class="mb-3 mx-5">
+            <label for="ItemName" class="form-label">Item Name</label>
+            <input type="text" class="form-control" id="InputItemName" aria-describedby="emailHelp">
+        </div>
+        <div class="mb-3 mx-5">
+            <label for="Deposit" class="form-label">Deposit</label>
+            <input type="number" class="form-control" id="InputDeposit">
+        </div>
+        <div class="mb-3 mx-5">
+            <label for="MinTime" class="form-label">Minimum Time</label>
+            <input type="number" class="form-control" id="InputMinTime" min="0" max="24">
+        </div>
+        <div class="m-5">
+            <button type="submit" class="btn btn-primary">List</button>
+        </div>
+    </form>
+</div>
