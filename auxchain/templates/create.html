@@ -4,19 +4,19 @@
     <form>
         <div class="mb-3 mx-5">
             <label for="Images" class="form-label">Images</label>
-            <input type="file" class="form-control" id="InputImages" multiple>
+            <input type="file" class="form-control" id="Images" multiple required>
         </div>
         <div class="mb-3 mx-5">
             <label for="ItemName" class="form-label">Item Name</label>
-            <input type="text" class="form-control" id="InputItemName" aria-describedby="emailHelp">
+            <input type="text" class="form-control" id="ItemName" required>
         </div>
         <div class="mb-3 mx-5">
             <label for="Deposit" class="form-label">Deposit</label>
-            <input type="number" class="form-control" id="InputDeposit">
+            <input type="number" class="form-control" id="Deposit" required>
         </div>
         <div class="mb-3 mx-5">
             <label for="MinTime" class="form-label">Minimum Time</label>
-            <input type="number" class="form-control" id="InputMinTime" min="0" max="24">
+            <input type="number" class="form-control" id="MinTime" min="0" max="24" placeholder="hours" required>
         </div>
         <div class="m-5">
             <button type="submit" class="btn btn-primary">List</button>
