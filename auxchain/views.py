@@ -28,6 +28,17 @@ class CreateView(TemplateView):
     template_name = "create.html"
 
 
+class LoadContract(View):
+
+    def get(self, request, address, *args, **kwargs):
+        contract = Contract.objects.create(contract_address=address)
+        try:
+            contract.load_from_blockchain()
+            return HttpResponse("ok")
+        except Exception:
+            contract.delete()
+            return HttpResponseNotFound()
+
 class ContractView(TemplateView):
     template_name = "view_contract.html"
 

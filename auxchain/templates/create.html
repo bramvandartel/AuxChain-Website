@@ -3,23 +3,31 @@
 <div class="container-fluid px-5">
     <form>
         <div class="mb-3 mx-5">
-            <label for="Images" class="form-label">Images</label>
-            <input type="file" class="form-control" id="Images" multiple required>
+            <label for="image" class="form-label">Image / currently ignored</label>
+            <input type="file" class="form-control" id="image" multiple>
         </div>
         <div class="mb-3 mx-5">
-            <label for="ItemName" class="form-label">Item Name</label>
-            <input type="text" class="form-control" id="ItemName" required>
+            <label for="title" class="form-label">Auction Title</label>
+            <input type="text" class="form-control" id="title" name="title" required>
         </div>
         <div class="mb-3 mx-5">
-            <label for="Deposit" class="form-label">Deposit</label>
-            <input type="number" class="form-control" id="Deposit" required>
+            <label for="description" class="form-label">Description</label>
+            <input type="text" class="form-control" id="description" name="description" required>
         </div>
         <div class="mb-3 mx-5">
-            <label for="MinTime" class="form-label">Minimum Time</label>
-            <input type="number" class="form-control" id="MinTime" min="0" max="24" placeholder="hours" required>
+            <label for="price" class="form-label">Starting price</label>
+            <input type="number" class="form-control" id="price" name="price" required>
+        </div>
+        <div class="mb-3 mx-5">
+            <label for="duration" class="form-label">Duration (in hours from creation)</label>
+            <input type="number" class="form-control" id="duration" name="duration" min="0" max="24" placeholder="hours" required>
+        </div>
+        <div class="mb-3 mx-5">
+            <label for="buyerDeposit" class="form-label">Buyer Deposit</label>
+            <input type="number" class="form-control" id="buyerDeposit" name="buyerDeposit" min="0" required>
         </div>
         <div class="m-5">
-            <button type="submit" class="btn btn-primary">List</button>
+            <button type="submit" class="btn btn-primary" onclick="listAuction();" id="submit">List auction</button>
         </div>
     </form>
 </div>
