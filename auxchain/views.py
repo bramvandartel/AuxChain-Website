@@ -1,6 +1,8 @@
+import datetime
 import json
 
 import django.conf
+import requests
 from django.contrib.auth import login, logout
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
@@ -20,7 +22,7 @@ class MainView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(MainView, self).get_context_data(**kwargs)
-        context['auctions'] = Contract.objects.all()
+        context['auctions'] = Contract.objects.all().filter(end_time__gte=datetime.datetime.now())
         return context
 
 
@@ -53,6 +55,7 @@ class ContractView(TemplateView):
             'buyerDeposit': contract_instance.functions.buyerDeposit().call(),
             'description': contract_instance.functions.description().call(),
             'endTime': contract_instance.functions.endTime().call(),
+            'endTimeReadable': datetime.datetime.fromtimestamp(contract_instance.functions.endTime().call()),
             'getStatus': contract_instance.functions.getStatus().call(),
             'highestBid': contract_instance.functions.highestBid().call(),
             'highestBidder': contract_instance.functions.highestBidder().call(),
@@ -102,3 +105,19 @@ class Logout(View):
     def get(self, request, *args, **kwargs):
         logout(request)
         return HttpResponseRedirect(reverse('auxchain:overview'))
+
+
+class GetBids(View):
+
+    def get(self, request, address, *args, **kwargs):
+        result = []
+        url = f"https://api-sepolia.etherscan.io/api?module=account&action=txlist&address={address}&sort=desc"
+        answer = requests.get(url)
+        answer = answer.json()
+        try:
+            for tx in answer['result']:
+                if tx['functionName'] == "bid()" and tx['txreceipt_status'] == '1':
+                    result.append({'bid': tx['value'], 'from': tx['from'], 'timestamp': datetime.datetime.fromtimestamp(int(tx['timeStamp']))})
+            return JsonResponse(data={'bids': result})
+        except Exception:
+            return HttpResponseNotFound()

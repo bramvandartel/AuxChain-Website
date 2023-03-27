@@ -1,13 +1,14 @@
-{% include "base.html" %}
+{% extends "base.html" %}
 {% load humanize %}
 
+{% block title %}Home{% endblock %}
 {% block content %}
     <div class="container">
         <h2>Current auctions</h2>
         {% if auctions %}
             <div class="row">
                 {% for auction in auctions %}
-                    <div class="col">
+                    <div class="col-lg-3">
                         <div class="card mt-3">
                             <img src="https://www.schoolplaten.com/afbeelding-eend-dm20017.jpg" class="card-img-top"
                                  alt="...">
@@ -37,7 +38,7 @@
         {% else %}
             <div class="row">
                 <div class="col-3">
-                    <p>There are no auctions yet.</p>
+                    <p>There are no current auctions.</p>
                 </div>
                 <div class="col-3">
                     <a class="btn btn-primary" href="{% url "auxchain:create" %}">Want to create one?</a>

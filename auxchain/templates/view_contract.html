@@ -1,5 +1,133 @@
-{% include "base.html" %}
+{% extends "base.html" %}
+{% load humanize %}
 
-{{ contract.address }}
-<hr>
-{{ instance }}
+{% block title %}{{ instance.title }}{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card mt-5">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ instance.title }}</h5>
+                        <p class="card-text">{{ instance.description }}</p>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Ends in</strong>: {{ instance.endTimeReadable|naturaltime }}
+                        </li>
+                        <li class="list-group-item"><strong>Status</strong>: {{ instance.getStatus|capfirst }}</li>
+                        <li class="list-group-item"><strong>Seller</strong>: <span
+                                title="{{ instance.seller }}">{{ instance.seller|truncatechars_html:32 }}</span></li>
+                        <li class="list-group-item"><strong>Buyer Deposit</strong>: {{ instance.buyerDeposit }}</li>
+                        <li class="list-group-item"><strong>Seller Deposit</strong>: {{ instance.sellerDeposit }}</li>
+
+                        <li class="list-group-item"><a
+                                href="https://sepolia.etherscan.io/address/{{ contract.address }}">View on EtherScan</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card mt-5">
+                    <div class="card-body">
+                        <h5 class="card-title">Bids</h5>
+                        <ul id="bids" class="list-group list-group-flush"><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span></ul>
+                        {% if instance.getStatus == "open" %}
+                        <form action="javascript:bid();">
+                            <div class="row">
+                                <div class="col">
+                                    <input type="number" class="form-control col-3" id="bid" placeholder="Price to bid">
+                                </div>
+                                <div class="col-3">
+                                    <p class="mt-1">+ {{ instance.buyerDeposit }} deposit</p>
+                                </div>
+                                <div class="col">
+                                    <input type="submit" class="form-control col-3 btn btn-primary" value="Bid!"
+                                           id="submit">
+                                </div>
+                            </div>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script type="text/javascript">
+        function getTransactionReceipt(txHash) {
+            return window.ethereum.request({
+                method: 'eth_getTransactionReceipt', params:
+                    [txHash]
+            });
+        }
+
+        async function bid() {
+            const web3 = new Web3(window.ethereum);
+            $('#submit').replaceWith('<button id="submit" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Opening Metamask...</button>');
+            const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+            const account = accounts[0];
+            const value = parseInt($('#bid').val()) + {{ instance.buyerDeposit }};
+            const abiHash = web3.utils.sha3("bid()").substring(0, 10);
+            console.log(web3.utils.toHex(value));
+            const createTransaction = window.ethereum.request({
+                method: 'eth_sendTransaction', params: [{
+                    from: account,
+                    to: '{{ contract.address }}',
+                    value: web3.utils.toHex(value),
+                    data: abiHash,
+                }]
+            }).then(async (result) => {
+                $('#submit').replaceWith('<button id="submit" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for transaction to be verified...</button>');
+                const ITERATIONS = 30;
+
+                i = 0;
+                while (i < ITERATIONS) {
+                    i++;
+                    await new Promise(r => setTimeout(r, 2000));
+                    var receipt = await getTransactionReceipt(result);
+                    if (receipt !== null) {
+                        break;
+                    }
+                }
+                if (receipt === null) {
+                    $('#submit').replaceWith('<button id="submit" class="btn btn-danger" type="button" disabled>Error: Check your wallet</button>');
+                    return;
+                }
+                $('#submit').replaceWith('<button id="submit" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
+                await new Promise(r => setTimeout(r, 5000));
+                location.reload();
+            }).catch(async (error) => {
+                $('#submit').replaceWith('<div id="submit"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
+                await new Promise(r => setTimeout(r, 5000));
+                $('#submit').replaceWith('<button type="submit" class="btn btn-primary" id="submit">Try again</button>');
+            });
+
+
+            {#return window.ethereum.request({#}
+            {#    method: 'eth_getTransactionReceipt', params:#}
+            {#        [txHash]#}
+            {# });#}
+        }
+
+        (function refresh_bids() {
+            $.ajax({
+                url: '{% url "auxchain:api:get_bids" 0 %}'.replace('0', '{{ contract.address }}'),
+                type: 'GET',
+                success: function (result) {
+                    console.log(result);
+                    i = 0;
+                    var start = '<ul class="list-group list-group-flush">';
+                    while (i < result.bids.length) {
+                        start += '<li class="list-group-item"><strong>' + result.bids[i].bid + ' wei</strong> by ' + result.bids[i].from + '</li>';
+                        i++;
+                    }
+                    start += '</ul>';
+                    $('#bids').replaceWith(start);
+                }
+            });
+            setTimeout(arguments.callee, 30000);
+        })();
+    </script>
+{% endblock %}
