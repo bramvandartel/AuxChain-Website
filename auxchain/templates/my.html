@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Home{% endblock %}
+{% block content %}
+    <div class="container">
+        <h2>My won auctions</h2>
+        {% if won_auctions %}
+            <div class="row">
+                {% for auction in won_auctions %}
+                    <div class="col-lg-3">
+                        <div class="card mt-3">
+                            <img src="https://www.schoolplaten.com/afbeelding-eend-dm20017.jpg" class="card-img-top"
+                                 alt="...">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ auction.title }}</h5>
+                                <p class="card-text">{{ auction.description }}
+                                </p>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>My winning bid:</strong> {{ auction.highest_bid }} wei</li>
+                            </ul>
+                            <div class="card-body">
+                                <a href="{% url "auxchain:view" auction.contract_address %}"
+                                   class="btn btn-primary">Go to auction</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-3">
+                    <p>There are no auctions you won.</p>
+                </div>
+            </div>
+        {% endif %}
+        <h2>My auctions as seller</h2>
+        {% if seller_auctions %}
+            <div class="row">
+                {% for auction in seller_auctions %}
+                    <div class="col-lg-3">
+                        <div class="card mt-3">
+                            <img src="https://www.schoolplaten.com/afbeelding-eend-dm20017.jpg" class="card-img-top"
+                                 alt="...">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ auction.title }}</h5>
+                                <p class="card-text">{{ auction.description }}
+                                </p>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item"><strong>Current bid:</strong> {{ auction.highest_bid }}</li>
+                                <li class="list-group-item"><strong>End
+                                    time:</strong> {{ auction.end_time|naturaltime }}</li>
+                            </ul>
+                            <div class="card-body">
+                                <a href="{% url "auxchain:view" auction.contract_address %}"
+                                   class="btn btn-primary">Go to auction</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="row">
+                <div class="col-3">
+                    <p>There are no auctions you created.</p>
+                </div>
+                <div class="col-3">
+                    <a class="btn btn-primary" href="{% url "auxchain:create" %}">Want to create one?</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

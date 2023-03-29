@@ -28,9 +28,14 @@
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="{% url "auxchain:overview" %}">Home</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url "auxchain:create" %}">Create auction</a>
-                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url "auxchain:my" %}">My auctions</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url "auxchain:create" %}">Create auction</a>
+                    </li>
+                {% endif %}
             </ul>
             <ul class="navbar-nav">
                 {% if not user.is_authenticated %}

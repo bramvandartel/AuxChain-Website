@@ -18,17 +18,11 @@
                                 </p>
                             </div>
                             <ul class="list-group list-group-flush">
-                                <li class="list-group-item"><strong>Current bid:</strong> 50 ETH</li>
+                                <li class="list-group-item"><strong>Current bid:</strong> {{ auction.highest_bid }} wei</li>
                                 <li class="list-group-item"><strong>End time:</strong> {{ auction.end_time|naturaltime }}</li>
-{#                                <li class="list-group-item"><strong>Seller:</strong> {{ auction.seller }}</li>#}
-{#                                <li class="list-group-item"><strong>Seller#}
-{#                                    deposit:</strong> {{ auction.seller_deposit }}#}
-{#                                </li>#}
-{#                                <li class="list-group-item"><strong>Buyer deposit:</strong> {{ auction.buyer_deposit }}#}
-{#                                </li>#}
                             </ul>
                             <div class="card-body">
-                                <a href="{% url "auxchain:api:view_contract" auction.contract_address %}"
+                                <a href="{% url "auxchain:view" auction.contract_address %}"
                                    class="btn btn-primary">Go to auction</a>
                             </div>
                         </div>

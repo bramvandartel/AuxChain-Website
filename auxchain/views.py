@@ -4,6 +4,8 @@ import json
 import django.conf
 import requests
 from django.contrib.auth import login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
@@ -13,7 +15,7 @@ from eth_account.messages import encode_defunct
 from rest_framework.views import APIView
 from web3 import Web3
 
-from auxchain.models import MetamaskUser, Contract
+from auxchain.models import MetamaskUser, Contract, Bid
 
 
 # Create your views here.
@@ -23,6 +25,18 @@ class MainView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super(MainView, self).get_context_data(**kwargs)
         context['auctions'] = Contract.objects.all().filter(end_time__gte=datetime.datetime.now())
+        return context
+
+
+class MyView(LoginRequiredMixin, TemplateView):
+    template_name = "my.html"
+
+    def get_context_data(self, **kwargs):
+        context = super(MyView, self).get_context_data(**kwargs)
+        for bid in Bid.objects.filter(bidder=self.request.user.public_address):
+            bid.auction.get_highest_bidder()
+        context['seller_auctions'] = Contract.objects.filter(seller=self.request.user.public_address).order_by('-end_time')
+        context['won_auctions'] = Contract.objects.filter(highest_bidder=self.request.user.public_address).order_by('-end_time')
         return context
 
 
@@ -41,6 +55,7 @@ class LoadContract(View):
             contract.delete()
             return HttpResponseNotFound()
 
+
 class ContractView(TemplateView):
     template_name = "view_contract.html"
 
@@ -50,12 +65,15 @@ class ContractView(TemplateView):
         abi = json.load(open(django.conf.settings.DEFAULT_CONTRACT_ABI))
         checksum_address = Web3.toChecksumAddress(address)
         contract_instance = w3.eth.contract(address=checksum_address, abi=abi)
+        endtime = contract_instance.functions.endTime().call()
+        if endtime == 0:
+            endtime = 1680104043
         context['instance'] = {
             'functions': contract_instance.all_functions(),
             'buyerDeposit': contract_instance.functions.buyerDeposit().call(),
             'description': contract_instance.functions.description().call(),
             'endTime': contract_instance.functions.endTime().call(),
-            'endTimeReadable': datetime.datetime.fromtimestamp(contract_instance.functions.endTime().call()),
+            'endTimeReadable': datetime.datetime.fromtimestamp(endtime),
             'getStatus': contract_instance.functions.getStatus().call(),
             'highestBid': contract_instance.functions.highestBid().call(),
             'highestBidder': contract_instance.functions.highestBidder().call(),
@@ -107,7 +125,7 @@ class Logout(View):
         return HttpResponseRedirect(reverse('auxchain:overview'))
 
 
-class GetBids(View):
+class GetBids(APIView):
 
     def get(self, request, address, *args, **kwargs):
         result = []
@@ -117,7 +135,13 @@ class GetBids(View):
         try:
             for tx in answer['result']:
                 if tx['functionName'] == "bid()" and tx['txreceipt_status'] == '1':
-                    result.append({'bid': tx['value'], 'from': tx['from'], 'timestamp': datetime.datetime.fromtimestamp(int(tx['timeStamp']))})
-            return JsonResponse(data={'bids': result})
-        except Exception:
+                    bid = int(tx['value']) - int(Contract.objects.get(contract_address=address).buyer_deposit)
+                    result.append(
+                        {'bid': bid, 'from': tx['from'],
+                         'timestamp': datetime.datetime.fromtimestamp(int(tx['timeStamp']))})
+                    Bid.objects.get_or_create(amount=bid, bidder=tx['from'],
+                                              auction=Contract.objects.get(contract_address=address))
+
+        except TypeError:
             return HttpResponseNotFound()
+        return JsonResponse(data={'bids': result})

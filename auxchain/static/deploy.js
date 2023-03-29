@@ -15,6 +15,9 @@ async function listAuction(add_url, view_url) {
     const description = $('#description').val();
     const duration = $('#duration').val() * 3600;
     const buyerDeposit = $('#buyerDeposit').val();
+    const sellerDeposit = $('#sellerDeposit').val();
+    console.log(sellerDeposit);
+    console.log(web3.utils.toHex(sellerDeposit));
     const parameters = web3.eth.abi.encodeParameters(['uint256', 'string', 'string', 'uint256', 'uint256'], [startingPrice, title, description, duration, buyerDeposit]);
     const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
     const account = accounts[0];
@@ -24,6 +27,7 @@ async function listAuction(add_url, view_url) {
             [{
                 from: account,
                 data: bytecode + parameters.replace('0x', ''),
+                value: web3.utils.toHex(sellerDeposit),
             }]
     }).then(async (result) => {
         $('#submit').replaceWith('<button id="submit" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for transaction to be verified...</button>');

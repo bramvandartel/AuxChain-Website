@@ -30,25 +30,49 @@
                 <div class="card mt-5">
                     <div class="card-body">
                         <h5 class="card-title">Bids</h5>
-                        <ul id="bids" class="list-group list-group-flush"><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span></ul>
-                        {% if instance.getStatus == "open" %}
-                        <form action="javascript:bid();">
-                            <div class="row">
-                                <div class="col">
-                                    <input type="number" class="form-control col-3" id="bid" placeholder="Price to bid">
+                        <ul id="bids" class="list-group list-group-flush"><span class="spinner-grow spinner-grow-sm"
+                                                                                role="status" aria-hidden="true"></span>
+                        </ul>
+                        {% if instance.getStatus == "open" and user.is_authenticated %}
+                            <form action="javascript:bid();">
+                                <div class="row">
+                                    <div class="col">
+                                        <input type="number" class="form-control col-3" id="bid"
+                                               placeholder="Price to bid">
+                                    </div>
+                                    <div class="col-3">
+                                        <p class="mt-1">+ {{ instance.buyerDeposit }} deposit</p>
+                                    </div>
+                                    <div class="col">
+                                        <input type="submit" class="form-control col-3 btn btn-primary" value="Bid!"
+                                               id="submit">
+                                    </div>
                                 </div>
-                                <div class="col-3">
-                                    <p class="mt-1">+ {{ instance.buyerDeposit }} deposit</p>
-                                </div>
-                                <div class="col">
-                                    <input type="submit" class="form-control col-3 btn btn-primary" value="Bid!"
-                                           id="submit">
-                                </div>
-                            </div>
-                        </form>
+                            </form>
                         {% endif %}
                     </div>
                 </div>
+                {% if user.is_authenticated %}
+                    {% if instance.highestBidder == user.public_address or instance.seller == user.public_address %}
+                        <div class="card mt-5">
+                            <div class="card-body">
+                                <h5 class="card-title mb-5">Actions for my auction</h5>
+                                {% if instance.seller == user.public_address %}
+                                    <button class="btn btn-danger" id="abort" onclick="abort();">Abort auction</button>
+                                    {% if instance.getStatus == "open" %}
+                                        <button class="btn btn-danger" id="close" onclick="closeAuction();">Close auction
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                                {% if instance.highestBidder == user.public_address %}
+                                    <button class="btn btn-success" id="confirm" onclick="confirm();">Confirm item
+                                        received
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -103,12 +127,123 @@
                 await new Promise(r => setTimeout(r, 10000));
                 $('#submit').replaceWith('<button type="submit" class="btn btn-primary" id="submit">Try again</button>');
             });
+        }
 
+        async function abort() {
+            const web3 = new Web3(window.ethereum);
+            $('#abort').replaceWith('<button id="abort" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Opening Metamask...</button>');
+            const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+            const account = accounts[0];
+            const abiHash = web3.utils.sha3("abort()").substring(0, 10);
+            const createTransaction = window.ethereum.request({
+                method: 'eth_sendTransaction', params: [{
+                    from: account,
+                    to: '{{ contract.address }}',
+                    data: abiHash,
+                }]
+            }).then(async (result) => {
+                $('#abort').replaceWith('<button id="abort" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for transaction to be verified...</button>');
+                const ITERATIONS = 30;
 
-            {#return window.ethereum.request({#}
-            {#    method: 'eth_getTransactionReceipt', params:#}
-            {#        [txHash]#}
-            {# });#}
+                i = 0;
+                while (i < ITERATIONS) {
+                    i++;
+                    await new Promise(r => setTimeout(r, 2000));
+                    var receipt = await getTransactionReceipt(result);
+                    if (receipt !== null) {
+                        break;
+                    }
+                }
+                if (receipt === null) {
+                    $('#abort').replaceWith('<button id="abort" class="btn btn-danger" type="button" disabled>Error: Check your wallet</button>');
+                    return;
+                }
+                $('#abort').replaceWith('<button id="abort" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
+                await new Promise(r => setTimeout(r, 10000));
+                location.reload();
+            }).catch(async (error) => {
+                $('#abort').replaceWith('<div id="abort"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
+                await new Promise(r => setTimeout(r, 10000));
+                location.reload();
+            });
+        }
+
+        async function closeAuction() {
+            const web3 = new Web3(window.ethereum);
+            $('#close').replaceWith('<button id="close" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Opening Metamask...</button>');
+            const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+            const account = accounts[0];
+            const abiHash = web3.utils.sha3("closeAuction()").substring(0, 10);
+            const createTransaction = window.ethereum.request({
+                method: 'eth_sendTransaction', params: [{
+                    from: account,
+                    to: '{{ contract.address }}',
+                    data: abiHash,
+                }]
+            }).then(async (result) => {
+                $('#close').replaceWith('<button id="close" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for transaction to be verified...</button>');
+                const ITERATIONS = 30;
+
+                i = 0;
+                while (i < ITERATIONS) {
+                    i++;
+                    await new Promise(r => setTimeout(r, 2000));
+                    var receipt = await getTransactionReceipt(result);
+                    if (receipt !== null) {
+                        break;
+                    }
+                }
+                if (receipt === null) {
+                    $('#close').replaceWith('<button id="close" class="btn btn-danger" type="button" disabled>Error: Check your wallet</button>');
+                    return;
+                }
+                $('#close').replaceWith('<button id="close" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
+                await new Promise(r => setTimeout(r, 10000));
+                location.reload();
+            }).catch(async (error) => {
+                $('#close').replaceWith('<div id="close"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
+                await new Promise(r => setTimeout(r, 10000));
+                location.reload();
+            });
+        };
+
+        async function confirm() {
+            const web3 = new Web3(window.ethereum);
+            $('#confirm').replaceWith('<button id="confirm" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Opening Metamask...</button>');
+            const accounts = await window.ethereum.request({method: 'eth_requestAccounts'});
+            const account = accounts[0];
+            const abiHash = web3.utils.sha3("confirmReceived()").substring(0, 10);
+            const createTransaction = window.ethereum.request({
+                method: 'eth_sendTransaction', params: [{
+                    from: account,
+                    to: '{{ contract.address }}',
+                    data: abiHash,
+                }]
+            }).then(async (result) => {
+                $('#confirm').replaceWith('<button id="confirm" class="btn btn-primary" type="button" disabled><span class="spinner-grow spinner-grow-sm" role="status" aria-hidden="true"></span>Waiting for transaction to be verified...</button>');
+                const ITERATIONS = 30;
+
+                i = 0;
+                while (i < ITERATIONS) {
+                    i++;
+                    await new Promise(r => setTimeout(r, 2000));
+                    var receipt = await getTransactionReceipt(result);
+                    if (receipt !== null) {
+                        break;
+                    }
+                }
+                if (receipt === null) {
+                    $('#confirm').replaceWith('<button id="confirm" class="btn btn-danger" type="button" disabled>Error: Check your wallet</button>');
+                    return;
+                }
+                $('#confirm').replaceWith('<button id="confirm" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
+                await new Promise(r => setTimeout(r, 10000));
+                location.reload();
+            }).catch(async (error) => {
+                $('#confirm').replaceWith('<div id="confirm"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
+                await new Promise(r => setTimeout(r, 10000));
+                $('#confirm').replaceWith('<button class="btn btn-warning" id="confirm">Try confirm again</button>');
+            });
         }
 
         (function refresh_bids() {

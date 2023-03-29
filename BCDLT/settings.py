@@ -132,3 +132,4 @@ AUTH_USER_MODEL = 'auxchain.MetamaskUser'
 DEFAULT_CONTRACT_ABI = 'abi.json'
 
 STATIC_URL = '/static/'
+LOGIN_URL = '/'
