@@ -60,7 +60,8 @@
                                 {% if instance.seller == user.public_address %}
                                     <button class="btn btn-danger" id="abort" onclick="abort();">Abort auction</button>
                                     {% if instance.getStatus == "open" %}
-                                        <button class="btn btn-danger" id="close" onclick="closeAuction();">Close auction
+                                        <button class="btn btn-danger" id="close" onclick="closeAuction();">Close
+                                            auction
                                         </button>
                                     {% endif %}
                                 {% endif %}
@@ -160,7 +161,7 @@
                 }
                 $('#abort').replaceWith('<button id="abort" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
                 await new Promise(r => setTimeout(r, 10000));
-                location.reload();
+                refreshAuction();
             }).catch(async (error) => {
                 $('#abort').replaceWith('<div id="abort"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
                 await new Promise(r => setTimeout(r, 10000));
@@ -199,7 +200,7 @@
                 }
                 $('#close').replaceWith('<button id="close" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
                 await new Promise(r => setTimeout(r, 10000));
-                location.reload();
+                refreshAuction();
             }).catch(async (error) => {
                 $('#close').replaceWith('<div id="close"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
                 await new Promise(r => setTimeout(r, 10000));
@@ -238,11 +239,24 @@
                 }
                 $('#confirm').replaceWith('<button id="confirm" class="btn btn-success" type="button" disabled>Transaction confirmed!</button>');
                 await new Promise(r => setTimeout(r, 10000));
-                location.reload();
+                refreshAuction();
             }).catch(async (error) => {
                 $('#confirm').replaceWith('<div id="confirm"><button class="btn btn-danger" type="button" disabled>Error: Something went wrong in your Metamask.</button></div>');
                 await new Promise(r => setTimeout(r, 10000));
                 $('#confirm').replaceWith('<button class="btn btn-warning" id="confirm">Try confirm again</button>');
+            });
+        }
+
+        function refreshAuction() {
+            $.ajax({
+                url: '{% url "auxchain:api:add_contract" contract.address %}',
+                type: 'GET',
+                success: async function (result) {
+                    if (result === "ok") {
+                        location.reload();
+                    } else {
+                    }
+                }
             });
         }
 

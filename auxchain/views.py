@@ -47,12 +47,12 @@ class CreateView(TemplateView):
 class LoadContract(View):
 
     def get(self, request, address, *args, **kwargs):
-        contract = Contract.objects.create(contract_address=address)
+        contract,_ = Contract.objects.get_or_create(contract_address=address)
         try:
             contract.load_from_blockchain()
             return HttpResponse("ok")
-        except Exception:
-            contract.delete()
+        except Exception as e:
+            print(e)
             return HttpResponseNotFound()
 
 
@@ -66,6 +66,7 @@ class ContractView(TemplateView):
         checksum_address = Web3.toChecksumAddress(address)
         contract_instance = w3.eth.contract(address=checksum_address, abi=abi)
         endtime = contract_instance.functions.endTime().call()
+        # TODO: Can be omitted if end time is correctly set in contract.
         if endtime == 0:
             endtime = 1680104043
         context['instance'] = {
