@@ -4,9 +4,10 @@
 {% block title %}{{ instance.title }}{% endblock %}
 {% block content %}
     <div class="container-fluid">
-        <div class="row">
+        <div class="row mb-5">
             <div class="col-lg-7">
                 <div class="card mt-5">
+                    <img src="{{ instance.imageURL }}" class="card-img-top" alt="...">
                     <div class="card-body">
                         <h5 class="card-title">{{ instance.title }}</h5>
                         <p class="card-text">{{ instance.description }}</p>
@@ -53,11 +54,11 @@
                     </div>
                 </div>
                 {% if user.is_authenticated %}
-                    {% if instance.highestBidder == user.public_address or instance.seller == user.public_address %}
+                    {% if instance.highestBidder|lower == user.public_address|lower or instance.seller|lower == user.public_address|lower %}
                         <div class="card mt-5">
                             <div class="card-body">
                                 <h5 class="card-title mb-5">Actions for my auction</h5>
-                                {% if instance.seller == user.public_address %}
+                                {% if instance.seller|lower == user.public_address|lower %}
                                     <button class="btn btn-danger" id="abort" onclick="abort();">Abort auction</button>
                                     {% if instance.getStatus == "open" %}
                                         <button class="btn btn-danger" id="close" onclick="closeAuction();">Close
@@ -65,7 +66,7 @@
                                         </button>
                                     {% endif %}
                                 {% endif %}
-                                {% if instance.highestBidder == user.public_address %}
+                                {% if instance.highestBidder|lower == user.public_address|lower and instance.getStatus == "closed" %}
                                     <button class="btn btn-success" id="confirm" onclick="confirm();">Confirm item
                                         received
                                     </button>

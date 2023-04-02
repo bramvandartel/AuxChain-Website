@@ -33,6 +33,7 @@ class Contract(models.Model):
     buyer_deposit = models.BigIntegerField(blank=True, null=True)
     highest_bidder = models.CharField(max_length=64, blank=True, null=True)
     status = models.CharField(max_length=64, default="open")
+    image_url = models.CharField(max_length=2048, default="https://www.salonlfc.com/wp-content/uploads/2018/01/image-not-found-1-scaled.png")
 
     def get_highest_bidder(self):
         w3 = Web3(Web3.HTTPProvider('https://sepolia.infura.io/v3/9998d159ba924e7aa128fac33d656dee'))
@@ -61,6 +62,7 @@ class Contract(models.Model):
         checksum_address = Web3.toChecksumAddress(self.contract_address)
         contract = w3.eth.contract(address=checksum_address, abi=abi)
         self.title = contract.functions.title().call()
+        self.image_url = contract.functions.imageUrl().call()
         self.description = contract.functions.description().call()
         self.seller = contract.functions.seller().call()
         self.end_time = datetime.datetime.fromtimestamp(contract.functions.endTime().call(), tz=tz)

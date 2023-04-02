@@ -5,9 +5,7 @@ import django.conf
 import requests
 from django.contrib.auth import login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
-from django.shortcuts import render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import TemplateView
@@ -33,14 +31,14 @@ class MyView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(MyView, self).get_context_data(**kwargs)
-        for bid in Bid.objects.filter(bidder=self.request.user.public_address):
+        for bid in Bid.objects.filter(bidder__iexact=self.request.user.public_address):
             bid.auction.get_highest_bidder()
-        context['seller_auctions'] = Contract.objects.filter(seller=self.request.user.public_address).order_by('-end_time')
-        context['won_auctions'] = Contract.objects.filter(highest_bidder=self.request.user.public_address).order_by('-end_time')
+        context['seller_auctions'] = Contract.objects.filter(seller__iexact=self.request.user.public_address).order_by('-end_time')
+        context['won_auctions'] = Contract.objects.filter(highest_bidder__iexact=self.request.user.public_address).order_by('-end_time')
         return context
 
 
-class CreateView(TemplateView):
+class CreateView(LoginRequiredMixin, TemplateView):
     template_name = "create.html"
 
 
@@ -66,9 +64,6 @@ class ContractView(TemplateView):
         checksum_address = Web3.toChecksumAddress(address)
         contract_instance = w3.eth.contract(address=checksum_address, abi=abi)
         endtime = contract_instance.functions.endTime().call()
-        # TODO: Can be omitted if end time is correctly set in contract.
-        if endtime == 0:
-            endtime = 1680104043
         context['instance'] = {
             'functions': contract_instance.all_functions(),
             'buyerDeposit': contract_instance.functions.buyerDeposit().call(),
@@ -80,6 +75,7 @@ class ContractView(TemplateView):
             'highestBidder': contract_instance.functions.highestBidder().call(),
             'seller': contract_instance.functions.seller().call(),
             'sellerDeposit': contract_instance.functions.sellerDeposit().call(),
+            'imageURL': contract_instance.functions.imageUrl().call(),
             'title': contract_instance.functions.title().call(),
         }
         contract = {
@@ -94,10 +90,10 @@ class RequestNonce(APIView):
     def get(self, request, public_address, *args, **kwargs):
         try:
             user = MetamaskUser.objects.get(public_address__iexact=public_address)
-            user.generate_nonce()
-            return JsonResponse({"success": True, "nonce": user.nonce})
         except MetamaskUser.DoesNotExist:
-            return JsonResponse({"success": False, "error": "NoSuchUser"})
+            user = MetamaskUser.objects.create(public_address=public_address, username=public_address)
+        user.generate_nonce()
+        return JsonResponse({"success": True, "nonce": user.nonce})
 
     def post(self, request, public_address, *args, **kwargs):
         print(request.POST)
