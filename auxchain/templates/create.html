@@ -9,7 +9,7 @@
     <form action="javascript:listAuction('{% url "auxchain:api:add_contract" 0 %}', '{% url "auxchain:view" 0 %}');">
         <div class="mb-3 mx-5">
             <label for="imageURL" class="form-label">Image URL</label>
-            <input type="url" class="form-control" id="imageURL">
+            <input type="url" class="form-control" id="imageURL" required>
         </div>
         <div class="mb-3 mx-5">
             <label for="title" class="form-label">Auction Title</label>
